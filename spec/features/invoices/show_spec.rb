@@ -107,5 +107,6 @@ RSpec.describe "invoices show" do
 # Next to each invoice item I see a link to the show page for the bulk discount that was applied (if any)
   it "renders links to applied discounts" do
     expect(page).to have_link("Discount #1")
+    save_and_open_page
   end
 end
