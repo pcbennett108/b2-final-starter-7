@@ -1,16 +1,30 @@
 <%= render partial: "shared/nav" %>
 
 <body>
-  <div class="row">
+  <div class="row column-header">
     <p class='col-12'>My Discounts</p>
   </div>
 
-  <p><%= link_to "Create New Discount", new_merchant_discount_path(@merchant) %></p>
+  <div class="mr-auto col-sm-6">
+    <h5 id="add-discount"><%= link_to "Add New Discount", new_merchant_discount_path(@merchant) %></h5>
+    <h4>Active Discounts:</h4>
 
-  <% @discounts.each do |discount| %>
-    <p><%= link_to "Discount ##{discount.id}", merchant_discount_path(@merchant, discount) %></p>
-    <p>Discount:   %<%= discount.percentage.to_i %></p>
-    <p>Min Quantity: <%= discount.threshold %> items</p>
-    <p><strong><%= button_to "Delete Discount ##{discount.id}", merchant_discount_path(@merchant, discount), method: :delete %></strong></p>
-  <% end %>
+    <ul id="discount-list">
+      <% @merchant.discounts.each do |discount| %>
+        <li id="discount-<%= discount.id %>">
+          <p><%= link_to "Discount: #{number_to_percentage(discount.percent_discount, precision: 0)} ", merchant_discount_path(@merchant, discount.id) %>  - Quantity Threshold: <%= discount.threshold_quantity %></p>
+          <%= button_to "Delete", merchant_discount_path(@merchant, discount.id), method: :delete, id: "delete-#{discount.id}" %>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+
+  <div class="ml-auto col-sm-6">
+    <h4>Upcoming Holidays</h4>
+    <ul>
+      <% @holidays.each do |holiday| %>
+        <li><%= holiday["name"] %> - <%= string_to_date(holiday["date"]) %></li>
+      <% end %>
+    </ul>
+  </div>
 </body>

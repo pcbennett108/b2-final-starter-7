@@ -1,60 +1,61 @@
 class DiscountsController < ApplicationController
+  before_action :find_merchant_and_discount, only: [:show, :edit, :update, :destroy]
+  before_action :find_merchant, only: [:index, :new, :create]
 
   def index
-    @merchant = Merchant.find(params[:merchant_id])
-    @discounts = @merchant.discounts
+    @holidays = HolidaysService.new.next_three_holidays
   end
 
   def show
-    @discount = Discount.find(params[:id])
-    @merchant = Merchant.find(params[:merchant_id])
+
   end
   
   def new
-    @merchant = Merchant.find(params[:merchant_id])
+    @discount = Discount.new
   end
-  
+
   def create
-    @merchant = Merchant.find(params[:merchant_id])
-    float = params[:percentage].to_f
-    Discount.create!(percentage: float,
-      threshold: params[:threshold],
-      merchant: @merchant)
+    discount = Discount.new(discount_params)
+    if discount.save
       redirect_to merchant_discounts_path(@merchant)
+      flash[:success] = "Discount Successfully Added!" 
+    else
+      flash[:danger] = "Discount Not Created: Required information missing"
+      redirect_to new_merchant_discount_path(@merchant)
     end
-    
-  def edit
-    @discount = Discount.find(params[:id])
-    @merchant = Merchant.find(params[:merchant_id])
   end
-  
+
+  def edit
+
+  end
+
   def update
-    @discount = Discount.find(params[:id])
-    @merchant = Merchant.find(params[:merchant_id])
-    @discount.update(discount_params)
-    flash.notice = 'Discount Has Been Updated!'
-    redirect_to merchant_discount_path(@merchant, @discount)
+    if @discount.update(discount_params)
+      redirect_to merchant_discount_path(@merchant, @discount)
+      flash[:success] = "Discount Successfully Updated!"
+    else
+      flash[:danger] = "Discount Not Updated: Fields cannot be empty"
+      redirect_to edit_merchant_discount_path(@merchant, @discount)
+    end
   end
 
   def destroy
-    @discount = Discount.find(params[:id])
-    @merchant = Merchant.find(params[:merchant_id])
     @discount.destroy
     redirect_to merchant_discounts_path(@merchant)
   end
 
-  private
+private
 
   def discount_params
-    params.require(:discount).permit(:percentage, :threshold, :merchant,:merchant_id, :id)
-  end
-
-  def find_discount
-    @discount = Discount.find(params[:id])
+    params.require(:discount).permit(:percent_discount, :threshold_quantity, :merchant_id)
   end
 
   def find_merchant
     @merchant = Merchant.find(params[:merchant_id])
   end
 
+  def find_merchant_and_discount
+    @merchant = Merchant.find(params[:merchant_id])
+    @discount = Discount.find(params[:id])
+  end
 end

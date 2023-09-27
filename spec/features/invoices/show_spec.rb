@@ -41,7 +41,8 @@ RSpec.describe "invoices show" do
     @ii_8 = InvoiceItem.create!(invoice_id: @invoice_7.id, item_id: @item_8.id, quantity: 1, unit_price: 5, status: 1)
     @ii_9 = InvoiceItem.create!(invoice_id: @invoice_7.id, item_id: @item_4.id, quantity: 1, unit_price: 1, status: 1)
     @ii_10 = InvoiceItem.create!(invoice_id: @invoice_8.id, item_id: @item_5.id, quantity: 1, unit_price: 1, status: 1)
-    @ii_11 = InvoiceItem.create!(invoice_id: @invoice_1.id, item_id: @item_8.id, quantity: 12, unit_price: 6, status: 1)
+    @ii_11 = InvoiceItem.create!(invoice_id: @invoice_1.id, item_id: @item_8.id, quantity: 5, unit_price: 6, status: 1)
+    @ii_12 = InvoiceItem.create!(invoice_id: @invoice_1.id, item_id: @item_3.id, quantity: 3, unit_price: 9, status: 1)
 
     @transaction1 = Transaction.create!(credit_card_number: 203942, result: 1, invoice_id: @invoice_1.id)
     @transaction2 = Transaction.create!(credit_card_number: 230948, result: 1, invoice_id: @invoice_2.id)
@@ -51,10 +52,9 @@ RSpec.describe "invoices show" do
     @transaction6 = Transaction.create!(credit_card_number: 879799, result: 0, invoice_id: @invoice_6.id)
     @transaction7 = Transaction.create!(credit_card_number: 203942, result: 1, invoice_id: @invoice_7.id)
     @transaction8 = Transaction.create!(credit_card_number: 203942, result: 1, invoice_id: @invoice_8.id)
-
-    @discount2 = Discount.create!(merchant: @merchant1, threshold: 10, percentage: 15)
-    @discount1 = Discount.create!(merchant: @merchant2, threshold: 10, percentage: 50)
-    @discount3 = Discount.create!(merchant: @merchant2, threshold: 15, percentage: 25)
+    
+    @discount_1 = @merchant1.discounts.create!(percent_discount: 20, threshold_quantity: 8)
+    @discount_2 = @merchant1.discounts.create!(percent_discount: 10, threshold_quantity: 5)
 
     visit merchant_invoice_path(@merchant1, @invoice_1)
   end
@@ -64,7 +64,23 @@ RSpec.describe "invoices show" do
     expect(page).to have_content(@invoice_1.status)
     expect(page).to have_content(@invoice_1.created_at.strftime("%A, %B %-d, %Y"))
   end
-
+  
+  it "shows the total revenue for this invoice" do
+    expect(page).to have_content(@invoice_1.total_revenue)
+  end
+  
+  it "shows the total discount for this invoice" do
+    within("#invoice-info") do
+      expect(page).to have_content(@invoice_1.total_discount)
+    end
+  end
+  
+  it "shows the total discounted revenue (revenue after discounts)" do
+    within("#invoice-info") do
+      expect(page).to have_content(@invoice_1.total_discounted_revenue)
+    end
+  end
+  
   it "shows the customer information" do
     expect(page).to have_content(@customer_1.first_name)
     expect(page).to have_content(@customer_1.last_name)
@@ -75,13 +91,20 @@ RSpec.describe "invoices show" do
     expect(page).to have_content(@item_1.name)
     expect(page).to have_content(@ii_1.quantity)
     expect(page).to have_content(@ii_1.unit_price)
-    expect(page).to_not have_content("$5.0")
-
+    expect(page).to_not have_content(@ii_4.unit_price)
   end
 
-  it "shows the total revenue for this invoice" do
-    expect(page).to have_content(@invoice_1.total_revenue)
+  it "shows the discount applied to each item and links to discount's show page" do
+    expect(page).to have_link("#{@ii_1.discount_applied.percent_discount}%")
+    expect(page).to have_link("#{@ii_11.discount_applied.percent_discount}%")
   end
+
+  it "shows a dash if the item has no discount applied" do
+    within("#the-status-#{@ii_12.id}") do
+      expect(page).to have_content("-")
+    end
+  end
+
 
   it "shows a select field to update the invoice status" do
     within("#the-status-#{@ii_1.id}") do
@@ -90,23 +113,9 @@ RSpec.describe "invoices show" do
 
       expect(page).to have_content("cancelled")
     end
+
     within("#current-invoice-status") do
       expect(page).to_not have_content("in progress")
     end
-  end
-
-  # ------ 6: Merchant Invoice Show Page: Total Revenue and Discounted Revenue
-  # When I visit my merchant invoice show page
-  # Then I see the total revenue for my merchant from this invoice (not including discounts)
-  # And I see the total discounted revenue for my merchant from this invoice which includes bulk discounts in the calculation
-  it "shows the discounted revenue for this invoice" do
-    expect(page).to have_content("Discounted Revenue: $151.2")
-  end
-
-# ------  7: Merchant Invoice Show Page: Link to applied discountsWhen I visit my merchant invoice show page
-# Next to each invoice item I see a link to the show page for the bulk discount that was applied (if any)
-  it "renders links to applied discounts" do
-    expect(page).to have_link("Discount")
-    save_and_open_page
   end
 end

@@ -1,8 +1,11 @@
-<%= form_with model: model, method: method, url: url, class: 'merchant_discount_form', local: true do |f| %>
-  <% @discount%>
-  <%= f.label :percentage, "Percentage Discount: %" %>
-  <%= f.number_field :percentage, value: @discount&.percentage.to_i %><br/><br/>
-  <%= f.label :threshold, "Quantity Threshold:" %>
-  <%= f.number_field :threshold %><br/><br/>
-  <%= f.submit 'Submit Discount'%>
-<% end %>
+<body>
+  <%= form_with model: @discount , url: url, method: method, id: id, local: true do |form| %>
+    <h3>Add a New Discount for <%= @merchant.name %></h3>
+    <%= form.label :percent_discount, "Discount Percent:" %>
+    <%= form.number_field :percent_discount, value: @discount&.percent_discount %> <br/><br/>
+    <%= form.label :threshold_quantity, "Quantity Threshold:" %>
+    <%= form.number_field :threshold_quantity, value: @discount&.threshold_quantity %> <br/><br/>
+    <%= form.hidden_field :merchant_id, value: @merchant.id %>
+    <%= form.submit button %>
+  <% end %>
+</body>

@@ -7,19 +7,27 @@ class Invoice < ApplicationRecord
   has_many :invoice_items
   has_many :items, through: :invoice_items
   has_many :merchants, through: :items
+  has_many :discounts, through: :merchants
 
   enum status: [:cancelled, :in_progress, :completed]
 
   def total_revenue
     invoice_items.sum("unit_price * quantity")
   end
+
   
-  def discounted_revenue
-    invoice_items.inject(0){|revenue, invoice_item| 
-      if invoice_item.item.applicable_discount(invoice_item.quantity)
-        revenue + invoice_item.quantity * invoice_item.unit_price * (1 - invoice_item.item.applicable_discount(invoice_item.quantity).percentage / 100)
-      else
-        revenue + invoice_item.quantity * invoice_item.unit_price
-      end}
-    end
+  def total_discount
+    invoice_items.select("invoice_items.id, 
+      MAX(discounts.percent_discount / 100.0) 
+      * invoice_items.unit_price 
+      * invoice_items.quantity as total_discount")
+      .joins(item: { merchant: :discounts })
+      .where("discounts.threshold_quantity <= invoice_items.quantity")
+      .group("invoice_items.id")
+      .sum(&:total_discount) 
+  end
+    
+  def total_discounted_revenue
+    total_revenue - total_discount
+  end
 end
